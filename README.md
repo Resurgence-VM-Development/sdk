@@ -6,6 +6,8 @@ for developing host projects that incorporate a
 
 ## Contents
 The Resurgence SDK contains the following:
+- `c-api-example`: an example of usage for the Resurgence C Interface. This
+  example is compatible with the same programs as `rvmtest`.
 - `rasm`: a basic implementation of an assembly compiler and bytecode generator
   that is compatible with Resurgence
 - `rvmtest`: a sample implementation of a host program that executes Resurgence
