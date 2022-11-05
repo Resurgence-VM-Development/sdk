@@ -1,10 +1,10 @@
-use resurgence::api::ext_func::resurgence_state::ResurgenceState;
-use resurgence::api::{codereader, codewriter};
+use resurgence::bytecode;
 use resurgence::CodeHolder;
 use resurgence::ExecutionEngine;
 use resurgence::Interpreter;
-use std::io::Error;
+use resurgence::ResurgenceState;
 use std::env;
+use std::io::Error;
 
 fn print_number(state: &mut ResurgenceState) -> Result<(), Error> {
     let num = state.get_i64()?;
@@ -20,7 +20,7 @@ fn print_string(state: &mut ResurgenceState) -> Result<(), Error> {
 
 fn main() {
     if let Some(filename) = env::args().nth(1) {
-        let code: CodeHolder = codereader::read_bytecode_file(filename.as_str()).unwrap();
+        let code: CodeHolder = bytecode::read_bytecode_file(filename.as_str()).unwrap();
         println!("Num of instructions: {}", code.instructions.len());
 
         let mut it = Interpreter::from(code);
@@ -31,10 +31,8 @@ fn main() {
 
         //it.execute_instruction(0).unwrap();
         it.execute_function(&"main".to_string()).unwrap();
-
-    }
-    else {
+    } else {
         println!("Usage: ./rvmtest [path to program]");
-        return
+        return;
     }
 }
