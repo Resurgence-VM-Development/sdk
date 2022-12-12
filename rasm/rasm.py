@@ -32,6 +32,28 @@ def make_f64(i):
 def make_str(i):
     return make_u64(len(i)) + i.encode('utf8')
 
+def make_loc(i, restrict = False):
+    i = i.lower()
+    if not restrict:
+        if i == "local":
+            return b'\x04'
+        elif i == "global":
+            return b'\x03'
+        elif i == "const":
+            return b'\x01'
+        elif i == "accumulator":
+            return b'\x02'
+        else:
+            fail(f"Invalid register location type \"{i}\", expected local, global, const, or accumulator")
+    else:
+        if i == "local":
+            return b'\x04'
+        elif i == "global":
+            return b'\x03'
+        else:
+            fail(f"Invalid register location type \"{i}\", expected local or global")
+            
+
 # resolves registers and aliases and outputs corresponding bytecode
 def resolve(field):
     paramStart = field.find("(")
@@ -43,14 +65,7 @@ def resolve(field):
             return make_u32(0) + b'\x02'
         
         p = int(field[paramStart + 1:paramEnd]) # parameter value
-        if t == "local":
-            return make_u32(p) + b'\x04'
-        elif t == "global":
-            return make_u32(p) + b'\x03'
-        elif t == "const":
-            return make_u32(p) + b'\x01'
-        else:
-            fail(f"Bad field {field} while resolving")
+        return make_u32(p) + make_loc(t)
     else: # uses an alias, need to recursively resolve
         if field in aliases:
             return resolve(aliases[field])
@@ -216,14 +231,14 @@ with open(filename, 'r') as file:
                 require_len(i, inst, params, 1)
                 data = b'\x01' + make_u32(int(params[0]))
             elif inst == 'framealloc':
-                require_len(i, inst, params, 1)
-                data = 'b\x15' + make_u32(int(params[0]))
+                require_len(i, inst, params, 2)
+                data = 'b\x15' + make_u32(int(params[0])) + make_loc(params[1], True)
             elif inst == 'free':
                 require_len(i, inst, params, 1)
                 data = b'\x02' + make_u32(int(params[0]))
             elif inst == 'framefree':
-                require_len(i, inst, params, 1)
-                data = b'\x16' + make_u32(int(params[0]))
+                require_len(i, inst, params, 2)
+                data = b'\x16' + make_u32(int(params[0])) + make_loc(params[1], True)
             elif inst == 'jump':
                 require_len(i, inst, params, 1)
                 if params[0] not in instPlaces: fail(f"Invalid placeholder {params[0]} at line {i}")
@@ -310,7 +325,7 @@ print(instructionData.hex())
 
 # Write bytecode file
 with open(dest, 'wb') as out:
-    out.write(b'RVM\x88' + b'\x00\x05') # header (magic + ver)
+    out.write(b'RVM\x88' + b'\x00\x06') # header (magic + ver)
     
     # constants table
     out.write(make_u32(len(constants)))
